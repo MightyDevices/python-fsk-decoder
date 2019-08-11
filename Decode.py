@@ -32,7 +32,7 @@ plt.psd(rf, Fs=fs)
 # offset frequency in Hz (read from the previous plot)
 offset_frequency = 366.8e3
 # baseband local oscillator
-bb_lo = np.exp(-1j * (2 * np.pi * (offset_frequency / fs) *
+bb_lo = np.exp(1j * (2 * np.pi * (-offset_frequency / fs) *
                       np.arange(0, len(rf))))
 
 # complex-mix to bring the rf signal to baseband (so that is centered around
