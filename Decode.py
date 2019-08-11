@@ -15,7 +15,7 @@ sf = {
     np.dtype('int32'): 2**32,
 }[rf.dtype]
 
-# convert to complex number c = inphase + j*quadrature and scale so that we are
+# convert to complex number c = in_phase + j*quadrature and scale so that we are
 # in (-1 , 1) range
 rf = (rf[:, 0] + 1j * rf[:, 1]) / sf
 
@@ -29,15 +29,14 @@ plt.psd(rf, Fs=fs)
 # MIX TO BASEBAND
 #
 
-# offset frequency in Hz
+# offset frequency in Hz (read from the previous plot)
 offset_frequency = 366.8e3
 # baseband local oscillator
 bb_lo = np.exp(-1j * (2 * np.pi * (offset_frequency / fs) *
                       np.arange(0, len(rf))))
 
 # complex-mix to bring the rf signal to baseband (so that is centered around
-# something around 0Hz. doesn't have to be perfect - costas loop will do the
-# rest)
+# something around 0Hz. doesn't have to be perfect.
 bb = rf * bb_lo
 
 # plot the mixed signal which ought to bring the signal of interest to the
@@ -51,7 +50,7 @@ plt.psd(bb, Fs=fs)
 # DECIMATE
 #
 
-# limit the sampling rate using decimation, let's use the decimation by 10
+# limit the sampling rate using decimation, let's use the decimation by 4
 bb_dec_factor = 4
 # get the baseband sampling frequency
 bb_fs = fs // bb_dec_factor
@@ -73,18 +72,18 @@ plt.psd(bb, Fs=bb_fs)
 # SELECT THE PART OF THE DATA THAT CONTAINS THE TRANSMISSION
 #
 
-# using the signal magnitude let's determine when the actual transmission took
-# place
-bb_mag = np.abs(bb)
-# mag threshold level
-bb_mag_thrs = 0.01
-
 # plot the whole signal
 plt.subplot(3, 3, 4)
 plt.title('Whole Signal magnitude, time domain')
 plt.xlabel('Time [s]')
 plt.ylabel('Magnitude')
 plt.plot(np.arange(0, len(bb)) / bb_fs, np.abs(bb))
+
+# using the signal magnitude let's determine when the actual transmission took
+# place
+bb_mag = np.abs(bb)
+# mag threshold level (as read from the chart above)
+bb_mag_thrs = 0.01
 
 # indices with magnitude higher than threshold
 bb_indices = np.nonzero(bb_mag > bb_mag_thrs)[0]
@@ -109,7 +108,8 @@ plt.plot(np.arange(0, len(bb)) / bb_fs, np.abs(bb))
 # being multiplied
 bb_angle_diff = np.angle(bb[:-1] * np.conj(bb[1:]))
 # mean output will tell us about the frequency offset in radians per sample
-# time. If the mean is not zero that means that we have some offset!
+# time. If the mean is not zero that means that we have some offset. lets' get
+# rid of it
 dem = bb_angle_diff - np.mean(bb_angle_diff)
 
 # plot the demodulated signal spectrum in order to get a ballpark estimate about
@@ -119,7 +119,8 @@ plt.subplot(3, 3, 6)
 plt.title('Demodulated Signal Spectrum,')
 plt.psd(dem, Fs=bb_fs)
 
-# bitrate assumption, will be corrected for using early-late symbol sync
+# bitrate assumption, will be corrected for using early-late symbol sync (as
+# read from the spectral content plot from above)
 bit_rate = 100e3
 
 # show the demodulated data in time domain
@@ -134,8 +135,9 @@ plt.plot(np.arange(0, len(dem)) / bb_fs, dem)
 # SIGNAL SYNCHRONIZATION (DATA RECOVERY)
 #
 
-# time to sample symbols, let's use the early-late symbol synchronization scheme
-# with the numerically controlled oscillator for the actual sampling
+# time to sample symbols, let's use the early-late (el) symbol synchronization
+# scheme with the numerically controlled oscillator (nco) for the actual
+# sampling
 
 # calculate the nco step based on the initial guess for the bit rate. Early-Late
 # requires sampling 3 times per symbol
